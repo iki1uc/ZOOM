@@ -1,65 +1,38 @@
 ZOOM ist die 1‑Meter‑Linie des Systems.
-Sie liefert die Rohdaten für ORT und HOME.
+ZOOM erhält seine Rohdaten ausschließlich aus BEN.
 ZOOM erkennt Achsen, Farben, Masken und Scan‑Vektoren.
-Ohne ZOOM kann ORT keine Würfel bilden und HOME keine Weitsicht erzeugen.
-C → Core‑Station
+ZOOM erzeugt die ersten Whirl‑Beam‑RUN‑Punkte (8/32/128).
+ZOOM liefert alle Daten an ORT und HOME weiter.
 
-X → Cross‑Station
+ZOOM‑Datenpool:
+ZOOM.tmp, zoom.line, zoom.axis, zoom.color, zoom.mask,
+zoom.scan, zoom.vector, zoom.whirl,
+NC3×3, NC6e, NC9×9,
+ROOT.me, SOURCE.me, SYSTEM.me.
 
-Z → Zero‑Station
-C/X/Z bilden die TIC‑TAC‑TOE‑Matrix.
-C = Core‑Station (Basis)
-X = Cross‑Station (Verbindung)
-Z = Zero‑Station (Neutralpunkt)
+ZOOM‑Input‑Pool:
+BEN.tmp, BEN.raw, BEN.scan, BEN.color, BEN.axis, BEN.mask.
 
-ZOOM kann alle drei Stationen beliefern.
-Die Matrix zeigt, welche Dateien kompatibel sind.
-RUN‑8
+ZOOM‑Output‑Pool:
+zoom.line, zoom.axis, zoom.color, zoom.mask,
+zoom.scan, zoom.vector, zoom.whirl,
+NC3×3, NC6e, NC9×9,
+ROOT.me, SOURCE.me, SYSTEM.me.
 
-RUN‑32 (RUNC)
-
-RUN‑128 (RUNQ
 Whirl‑Beam‑RUN‑Punkte:
-
 RUN‑8   = Startpunkt des Wirbels
 RUN‑32  = Verstärkung (RUNC)
 RUN‑128 = Expansion (RUNQ)
 
-Jeder RUN‑Punkt ist ein Beam‑Point.
-ZOOM erzeugt die ersten Beam‑Points für ORT und HOME.
-zoom.line
-
-zoom.axis
-
-zoom.color
-
-zoom.mask
-
-zoom.scan
-
-zoom.vector
-
-zoom.whirl
-ZOOM‑Tech‑Module:
-
-zoom.line   = 1‑Meter‑Linie
-zoom.axis   = Achsen‑Start
-zoom.color  = Farb‑Kontext
-zoom.mask   = Masken‑Treffer
-zoom.scan   = Scan‑Vektor
-zoom.vector = Vektor‑Ableitung
-zoom.whirl  = Wirbel‑Startpunkt
-
-Alle Module müssen OK sein, damit ZOOM korrekt arbeitet.
-NC3×3
-
-NC6e
-
-NC9×9
-NC‑Module:
-
+ZOOM‑NC‑Module:
 NC3×3 = Grundmatrix
 NC6e  = Erweiterte Matrix
 NC9×9 = Vollmatrix
 
-ZOOM nutzt NC‑Module zur Stabilisierung der 1‑Meter‑Linie.
+ZOOM‑RESPO‑Module:
+ROOT.me = Ursprung
+SOURCE.me = Quelle
+SYSTEM.me = System‑Kontext
+
+ZOOM liefert alle relevanten Daten an ORT und HOME.
+Ohne ZOOM kann ORT keine Würfel bilden und HOME keine Weitsicht erzeugen.
