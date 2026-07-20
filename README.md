@@ -1,85 +1,162 @@
 # ZOOM – 1‑Meter‑Linie · Whirl‑Beam · Scan‑Vektor · C/X/Z‑Matrix
-
 ZOOM ist die erste technische Instanz des Systems.
 ZOOM steht direkt nach BEN und liefert alle Roh‑Vektoren,
 Achsen, Farben, Masken und Whirl‑Beam‑RUN‑Punkte an ORT und HOME.
 
 ZOOM ist die 1‑Meter‑Linie des gesamten Systems.
 
----
-
-# 1. Aufgabe von ZOOM
-
-ZOOM führt die ersten drei Schritte aus:
-
-1. Rohdaten aus BEN lesen
-2. Achsen, Farben, Masken und Scan‑Vektoren erkennen
-3. Whirl‑Beam‑RUN‑Punkte erzeugen (8 / 32 / 128)
-
-ZOOM ist der technische Startpunkt der gesamten Pipeline.
+Dieses README beschreibt **jede Datei** im Repository
+und erklärt **ihren technischen Zweck**.
 
 ---
 
-# 2. ZOOM‑Input‑Pool (kommt aus BEN)
+# 1. Haupt‑HTML‑Dateien
 
-ZOOM erhält ausschließlich Daten aus BEN:
+## index.html
+Startseite des ZOOM‑Systems.
+Zeigt:
+- Tech‑Scan aller ZOOM‑Dateien
+- RUN‑Beam‑Punkte (8 / 32 / 128)
+- C/X/Z‑Matrix‑Vergleich
+- ZOOM‑Beschreibung
 
-- BEN.tmp
-- BEN.raw
-- BEN.scan
-- BEN.color
-- BEN.axis
-- BEN.mask
+Lädt alle `.txt`‑Dateien per `fetch()`.
 
-Wenn eine dieser Dateien fehlt → ZOOM kann nicht starten.
+## verify.html
+Basis‑Analyse‑Seite.
+Zeigt:
+- ZOOM‑Datenpool
+- Input‑Pool
+- Output‑Pool
+- RUN‑Beam‑Punkte
+- NC‑Module
+- RESPO‑Module
 
----
-
-# 3. ZOOM‑Datenpool (lokale Dateien im ZOOM‑Repo)
-
-ZOOM verarbeitet folgende Dateien:
-
-- ZOOM.tmp.txt
-- zoom.line.txt
-- zoom.axis.txt
-- zoom.color.txt
-- zoom.mask.txt
-- zoom.scan.txt
-- zoom.vector.txt
-- zoom.whirl.txt
-
-Diese Dateien müssen ASCII‑Namen haben,
-damit GitHub Pages sie laden kann.
-
----
-
-# 4. ZOOM‑NC‑Module
-
-ZOOM nutzt drei NC‑Matrizen:
-
-- NC3x3.txt
-- NC6e.txt
-- NC9x9.txt
-
-Unicode‑Versionen wie `NC3×3` oder `NC9×9` funktionieren NICHT online.
+## ZOOM.verify.html
+Erweiterte Analyse‑Seite.
+Zeigt:
+- vollständige ZOOM‑Pipeline
+- alle Module
+- alle Vektoren
+- alle RUN‑Punkte
+- alle NC‑Matrizen
 
 ---
 
-# 5. ZOOM‑RESPO‑Module
+# 2. ZOOM‑Datenpool (lokale Dateien)
 
-ZOOM benötigt drei System‑Module:
+Diese Dateien werden von index.html und verify.html geladen.
 
-- ROOT.me
-- SOURCE.me
-- SYSTEM.me
+## ZOOM.tmp.txt
+Haupt‑Rohdaten des ZOOM‑Systems.
+Erster Input für:
+- zoom.line
+- zoom.axis
+- zoom.color
+- zoom.mask
+- zoom.scan
+- zoom.vector
+- zoom.whirl
 
-Diese Dateien müssen im Root des Repos liegen.
+## zoom.line.txt
+Erste 1‑Meter‑Linie.
+Enthält:
+- horizontale Achsen
+- lineare Scan‑Daten
+
+## zoom.axis.txt
+Achsen‑Definitionen:
+- X
+- Y
+- Z
+- U
+- V
+- W
+
+## zoom.color.txt
+Farberkennung:
+- RGB‑Werte
+- Maskenfarben
+- Scan‑Farben
+
+## zoom.mask.txt
+Masken‑Definitionen:
+- Filter
+- Blocker
+- Sicht‑Masken
+
+## zoom.scan.txt
+Scan‑Vektor:
+- Roh‑Scan
+- Linien‑Scan
+- Achsen‑Scan
+
+## zoom.vector.txt
+Vektor‑Berechnung:
+- LEN
+- LINES
+- WORDS
+- RUN‑Punkte
+
+## zoom.whirl.txt
+Whirl‑Beam‑Daten:
+- RUN‑8
+- RUN‑32
+- RUN‑128
+- Whirl‑Startpunkt
 
 ---
 
-# 6. Whirl‑Beam‑RUN‑Punkte
+# 3. NC‑Module (Matrix‑System)
 
-ZOOM erzeugt die ersten RUN‑Punkte:
+Diese Dateien definieren die ZOOM‑Matrix.
+
+## NC3x3.txt
+Grundmatrix (3×3).
+Basis für:
+- C‑Matrix
+- X‑Matrix
+- Z‑Matrix
+
+## NC6e.txt
+Erweiterte Matrix (6‑Elemente).
+Für:
+- Achsen‑Erweiterung
+- Scan‑Erweiterung
+
+## NC9x9.txt
+Vollmatrix (9×9).
+Für:
+- Würfel‑Bildung in ORT
+- Weitsicht in HOME
+
+---
+
+# 4. RESPO‑Module (System‑Kontext)
+
+Diese Dateien definieren den System‑Kontext.
+
+## ROOT.me
+Ursprung des Systems.
+Basis‑Nullpunkt.
+
+## SOURCE.me
+Quelle der Daten.
+Verbindet:
+- BEN → ZOOM → ORT → HOME
+
+## SYSTEM.me
+System‑Kontext.
+Definiert:
+- globale Parameter
+- System‑Achsen
+- System‑Masken
+
+---
+
+# 5. RUN‑Beam‑Punkte (Whirl‑Physik)
+
+ZOOM erzeugt die ersten drei RUN‑Punkte:
 
 - RUN‑8   → Startpunkt des Wirbels
 - RUN‑32  → Verstärkung (RUNC)
@@ -89,87 +166,41 @@ Diese Werte werden an ORT und HOME weitergegeben.
 
 ---
 
-# 7. ZOOM‑Output‑Pool (geht an ORT und HOME)
+# 6. Pipeline
 
-ZOOM liefert:
+BEN → **ZOOM** → ORT → HOME → HH → ULTRA
 
-- zoom.line.txt
-- zoom.axis.txt
-- zoom.color.txt
-- zoom.mask.txt
-- zoom.scan.txt
-- zoom.vector.txt
-- zoom.whirl.txt
-- NC3x3.txt
-- NC6e.txt
-- NC9x9.txt
-- ROOT.me
-- SOURCE.me
-- SYSTEM.me
-
-ORT kann ohne diese Daten keine Würfel bilden.  
-HOME kann ohne diese Daten keine Weitsicht erzeugen.
+ZOOM ist der technische Startpunkt.
+Wenn ZOOM nicht lädt → alles dahinter fällt aus.
 
 ---
 
-# 8. ZOOM‑Index (index.html)
-
-Die Datei `index.html` zeigt:
-
-- Tech‑Scan aller ZOOM‑Dateien
-- RUN‑Beam‑Punkte
-- C/X/Z‑Matrix‑Vergleich
-- ZOOM‑Beschreibung
-
-Damit ZOOM online funktioniert, müssen alle Dateien:
-
-- ASCII‑Namen haben
-- im Root des Repos liegen
-- ohne Unicode sein
-- ohne Sonderzeichen sein
-- von GitHub Pages ladbar sein
-
----
-
-# 9. ZOOM‑Verify (ZOOM.verify.html)
-
-Die Datei `ZOOM.verify.html` zeigt:
-
-- ZOOM‑Datenpool
-- Input‑Pool
-- Output‑Pool
-- RUN‑Beam‑Punkte
-- NC‑Module
-- RESPO‑Module
-
-Wenn verify.html leer bleibt → ZOOM lädt Dateien nicht.
-
----
-
-# 10. GitHub‑Pages‑Hinweise (wichtig)
+# 7. GitHub‑Pages‑Hinweise
 
 Damit ZOOM online funktioniert:
 
-1. `index.html` muss im Root liegen  
+1. Alle Dateien müssen ASCII‑Namen haben  
 2. `.nojekyll` muss im Root liegen  
-3. Unicode‑Dateien müssen umbenannt werden  
-4. fetch‑Pfad muss ASCII‑Dateien laden  
-5. Dateien ohne Endung müssen `.txt` bekommen  
+3. Unicode‑Dateien dürfen NICHT existieren  
+4. fetch() muss `.txt`‑Dateien laden  
+5. index.html muss im Root liegen  
 
 Beispiel:
-
 - `zoom.line` → `zoom.line.txt`
 - `NC3×3` → `NC3x3.txt`
 
 ---
 
-# 11. ZOOM ist der Startpunkt der gesamten Pipeline
+# 8. ZOOM ist die technische 1‑Meter‑Linie
 
-Pipeline:
+ZOOM stabilisiert:
+- Achsen
+- Farben
+- Masken
+- Scan‑Vektoren
+- RUN‑Punkte
+- NC‑Matrizen
+- RESPO‑Module
 
-BEN → **ZOOM** → ORT → HOME → HH → ULTRA
+ZOOM ist die Grundlage für ORT‑Würfel und HOME‑Weitsicht.
 
-Wenn ZOOM nicht lädt → alles dahinter fällt aus.
-
-ZOOM ist die technische 1‑Meter‑Linie,
-die das gesamte System stabil hält.
