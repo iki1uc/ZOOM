@@ -1,38 +1,32 @@
-ZOOM ist die 1‑Meter‑Linie des Systems.
-ZOOM erhält seine Rohdaten ausschließlich aus BEN.
-ZOOM erkennt Achsen, Farben, Masken und Scan‑Vektoren.
-ZOOM erzeugt die ersten Whirl‑Beam‑RUN‑Punkte (8/32/128).
-ZOOM liefert alle Daten an ORT und HOME weiter.
-
-ZOOM‑Datenpool:
-ZOOM.tmp, zoom.line, zoom.axis, zoom.color, zoom.mask,
-zoom.scan, zoom.vector, zoom.whirl,
-NC3×3, NC6e, NC9×9,
-ROOT.me, SOURCE.me, SYSTEM.me.
-
-ZOOM‑Input‑Pool:
-BEN.tmp, BEN.raw, BEN.scan, BEN.color, BEN.axis, BEN.mask.
-
-ZOOM‑Output‑Pool:
-zoom.line, zoom.axis, zoom.color, zoom.mask,
-zoom.scan, zoom.vector, zoom.whirl,
-NC3×3, NC6e, NC9×9,
-ROOT.me, SOURCE.me, SYSTEM.me.
-
-Whirl‑Beam‑RUN‑Punkte:
-RUN‑8   = Startpunkt des Wirbels
-RUN‑32  = Verstärkung (RUNC)
-RUN‑128 = Expansion (RUNQ)
-
-ZOOM‑NC‑Module:
-NC3×3 = Grundmatrix
-NC6e  = Erweiterte Matrix
-NC9×9 = Vollmatrix
-
-ZOOM‑RESPO‑Module:
-ROOT.me = Ursprung
-SOURCE.me = Quelle
-SYSTEM.me = System‑Kontext
-
-ZOOM liefert alle relevanten Daten an ORT und HOME.
-Ohne ZOOM kann ORT keine Würfel bilden und HOME keine Weitsicht erzeugen.
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ZOOM VERIFY</title>
+<style>
+body { background:#000; color:#0ff; font-family:Consolas; padding:20px; }
+pre { background:#111; padding:10px; border-radius:6px; }
+</style>
+<script>
+async function loadFile(f){
+  const r = await fetch(f);
+  return r.ok ? await r.text() : "FEHLT";
+}
+async function start(){
+  const files = [
+    "ZOOM.tmp.txt","zoom.line.txt","zoom.axis.txt","zoom.color.txt",
+    "zoom.mask.txt","zoom.scan.txt","zoom.vector.txt","zoom.whirl.txt"
+  ];
+  let out = "";
+  for(const f of files){
+    out += f + ":\n" + await loadFile(f) + "\n\n";
+  }
+  document.getElementById("out").textContent = out;
+}
+</script>
+</head>
+<body onload="start()">
+<h1>ZOOM VERIFY</h1>
+<pre id="out">Lade…</pre>
+</body>
+</html>
