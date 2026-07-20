@@ -1,183 +1,32 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>ZOOM – VERIFY • 1m‑Linie • C/X/Z‑Matrix • Whirl‑Beam</title>
-
+<title>ZOOM FULL VERIFY</title>
 <style>
-body { background:#000; color:#eee; font-family:Consolas; padding:20px; }
-h1,h2 { color:#00e0ff; text-shadow:0 0 10px #00e0ff; }
-.block { border:1px solid #00e0ff; padding:15px; margin:20px 0; border-radius:8px; background:#111; }
-pre { background:#222; padding:10px; border-radius:6px; }
-.matrix { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-.cell { padding:10px; background:#222; border:1px solid #333; text-align:center; border-radius:6px; }
+body { background:#000; color:#0ff; font-family:Consolas; padding:20px; }
+pre { background:#111; padding:10px; border-radius:6px; }
 </style>
-
 <script>
-// ------------------------------------------------------
-// Station automatisch erkennen
-// ------------------------------------------------------
-function detectStation() {
-  const p = window.location.pathname.toLowerCase();
-  if (p.includes("/c/")) return "C";
-  if (p.includes("/x/")) return "X";
-  if (p.includes("/z/")) return "Z";
-  return "ZOOM";
+async function load(f){
+  const r = await fetch(f);
+  return r.ok ? await r.text() : "FEHLT";
 }
-const station = detectStation();
-
-// ------------------------------------------------------
-// ZOOM‑Tech‑Files
-// ------------------------------------------------------
-const ZOOM_TECH = [
-  "ZOOM.tmp",
-  "zoom.line",
-  "zoom.axis",
-  "zoom.color",
-  "zoom.mask",
-  "zoom.scan",
-  "zoom.vector",
-  "zoom.whirl",
-  "NC3×3",
-  "NC6e",
-  "NC9×9",
-  "ROOT.me",
-  "SOURCE.me",
-  "SYSTEM.me"
-];
-
-// C/X/Z‑Vectors (wie in deinem Original)
-const C = [
-  "C.tmp","NC3×3","NC6e","NC9×9","TMP","TRANS","WARB",
-  "X.room.CORE","X.room.IN","X.room.OUT","ghost.html",
-  "NC.math","ROOT.me","SOURCE.me","SYSTEM.me"
-];
-
-const X = [
-  "X.tmp","NC3×3","NC6e","NC9×9","TMP","TRANS","WARB",
-  "X.room.CORE","X.room.IN","X.room.OUT","ghost.html",
-  "NC.math","ROOT.me","SOURCE.me","SYSTEM.me"
-];
-
-const Z = [
-  "Z.tmp","NC3×3","NC6e","NC9×9","TMP","TRANS","WARB",
-  "X.room.CORE","X.room.IN","X.room.OUT","ghost.html",
-  "NC.math","ROOT.me","SOURCE.me","SYSTEM.me"
-];
-
-// ------------------------------------------------------
-// Vergleichsfunktion
-// ------------------------------------------------------
-function compare(base, target) {
-  let have = [];
-  let need = [];
-  for (const item of base) {
-    if (target.includes(item)) have.push(item);
-    else need.push(item);
+async function start(){
+  const pool = [
+    "ZOOM.tmp.txt","zoom.line.txt","zoom.axis.txt","zoom.color.txt",
+    "zoom.mask.txt","zoom.scan.txt","zoom.vector.txt","zoom.whirl.txt"
+  ];
+  let out = "ZOOM FULL VERIFY\n\n";
+  for(const f of pool){
+    out += "=== " + f + " ===\n" + await load(f) + "\n\n";
   }
-  return { have, need };
-}
-
-// ------------------------------------------------------
-// ZOOM‑Verify
-// ------------------------------------------------------
-async function runVerify() {
-
-  // C/X/Z Vergleich
-  const CtoX = compare(C, X);
-  const CtoZ = compare(C, Z);
-
-  const XtoC = compare(X, C);
-  const XtoZ = compare(X, Z);
-
-  const ZtoC = compare(Z, C);
-  const ZtoX = compare(Z, X);
-
-  // ZOOM‑Tech‑Scan
-  let zoomStatus = "";
-  for (const f of ZOOM_TECH) {
-    try {
-      const r = await fetch("./" + f);
-      zoomStatus += f + " → " + (r.ok ? "OK" : "FEHLT") + "\n";
-    } catch {
-      zoomStatus += f + " → FEHLT\n";
-    }
-  }
-
-  // Whirl‑Beam‑RUN‑Points
-  const RUN8  = 8;
-  const RUN32 = RUN8 * 4;
-  const RUN128 = RUN32 * 4;
-
-  document.getElementById("output").textContent =
-    "Station: " + station + "\n\n" +
-
-    "ZOOM‑Tech‑Scan\n" +
-    "==============\n" +
-    zoomStatus + "\n" +
-
-    "Whirl‑Beam‑Points\n" +
-    "=================\n" +
-    "RUN‑8   → " + RUN8 + "\n" +
-    "RUN‑32  → " + RUN32 + " (RUNC)\n" +
-    "RUN‑128 → " + RUN128 + " (RUNQ)\n\n" +
-
-    "TIC‑TAC‑TOE – Kreuz‑Vergleich\n" +
-    "=============================\n\n" +
-
-    "C ↔ X\n" +
-    "C hat: " + CtoX.have.join(", ") + "\n" +
-    "C braucht: " + CtoX.need.join(", ") + "\n\n" +
-
-    "X hat: " + XtoC.have.join(", ") + "\n" +
-    "X braucht: " + XtoC.need.join(", ") + "\n\n" +
-
-    "C ↔ Z\n" +
-    "C hat: " + CtoZ.have.join(", ") + "\n" +
-    "C braucht: " + CtoZ.need.join(", ") + "\n\n" +
-
-    "Z hat: " + ZtoC.have.join(", ") + "\n" +
-    "Z braucht: " + ZtoC.need.join(", ") + "\n\n" +
-
-    "X ↔ Z\n" +
-    "X hat: " + XtoZ.have.join(", ") + "\n" +
-    "X braucht: " + XtoZ.need.join(", ") + "\n\n" +
-
-    "Z hat: " + ZtoX.have.join(", ") + "\n" +
-    "Z braucht: " + ZtoX.need.join(", ") + "\n\n" +
-
-    "PORT‑RESPO‑Export\n" +
-    "=================\n" +
-    "C‑Vector: " + C.join(", ") + "\n" +
-    "X‑Vector: " + X.join(", ") + "\n" +
-    "Z‑Vector: " + Z.join(", ") + "\n\n" +
-
-    "Empfehlung:\n" +
-    "- ZOOM‑Tech vollständig geprüft.\n" +
-    "- Whirl‑Beam‑RUN‑Points aktiv.\n" +
-    "- C/X/Z kompatibel.\n" +
-    "- ZOOM kann als 1m‑Linie alle drei Stationen korrekt beliefern.\n";
+  document.getElementById("out").textContent = out;
 }
 </script>
 </head>
-
-<body onload="runVerify()">
-
-<h1>ZOOM – VERIFY • 1m‑Linie • C/X/Z‑Matrix • Whirl‑Beam</h1>
-
-<div class="block">
-  <h2>Matrix</h2>
-  <div class="matrix">
-    <div class="cell">C</div>
-    <div class="cell">X</div>
-    <div class="cell">Z</div>
-  </div>
-</div>
-
-<div class="block">
-  <h2>Analyse‑Output</h2>
-  <pre id="output"></pre>
-</div>
-
+<body onload="start()">
+<h1>ZOOM FULL VERIFY</h1>
+<pre id="out">Lade…</pre>
 </body>
 </html>
