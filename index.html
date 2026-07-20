@@ -1,219 +1,32 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>ZOOM · INDEX · 1m‑Linie · Whirl‑Beam · C/X/Z‑Matrix</title>
-
+<title>ZOOM INDEX</title>
 <style>
-  body { background:#000; color:#00ffff; font-family:Consolas; padding:20px; }
-  h1 { color:#33ccff; text-shadow:0 0 10px #00ffff; margin-bottom:20px; }
-
-  .panel {
-    background:#111;
-    border:1px solid #333;
-    padding:15px;
-    margin:20px 0;
-    border-radius:8px;
-  }
-
-  .panel h2 {
-    color:#33ccff;
-    margin-top:0;
-  }
-
-  pre {
-    background:#000;
-    border:1px solid #333;
-    padding:12px;
-    border-radius:6px;
-    white-space:pre-wrap;
-  }
-
-  .matrix {
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-  }
-
-  .cell {
-    padding:10px;
-    background:#222;
-    border:1px solid #333;
-    text-align:center;
-    border-radius:6px;
-  }
+body { background:#000; color:#0ff; font-family:Consolas; padding:20px; }
+pre { background:#111; padding:10px; border-radius:6px; }
 </style>
-
 <script>
-// Datei laden
-async function load(path){
-  try{
-    const r = await fetch("./" + path);
-    if(!r.ok) return null;
-    return await r.text();
-  }catch(e){
-    return null;
-  }
+async function load(f){
+  const r = await fetch(f);
+  return r.ok ? "OK" : "FEHLT";
 }
-
-// ZOOM‑Tech‑Files
-const ZOOM_TECH = [
-  "ZOOM.tmp",
-  "zoom.line",
-  "zoom.axis",
-  "zoom.color",
-  "zoom.mask",
-  "zoom.scan",
-  "zoom.vector",
-  "zoom.whirl",
-  "NC3×3",
-  "NC6e",
-  "NC9×9",
-  "ROOT.me",
-  "SOURCE.me",
-  "SYSTEM.me"
-];
-
-// C/X/Z‑Vectors
-const C = ["C.tmp","NC3×3","NC6e","NC9×9","TMP","TRANS","WARB","X.room.CORE","X.room.IN","X.room.OUT","ghost.html","NC.math","ROOT.me","SOURCE.me","SYSTEM.me"];
-const X = ["X.tmp","NC3×3","NC6e","NC9×9","TMP","TRANS","WARB","X.room.CORE","X.room.IN","X.room.OUT","ghost.html","NC.math","ROOT.me","SOURCE.me","SYSTEM.me"];
-const Z = ["Z.tmp","NC3×3","NC6e","NC9×9","TMP","TRANS","WARB","X.room.CORE","X.room.IN","X.room.OUT","ghost.html","NC.math","ROOT.me","SOURCE.me","SYSTEM.me"];
-
-// Vergleichsfunktion
-function compare(base, target) {
-  let have = [];
-  let need = [];
-  for (const item of base) {
-    if (target.includes(item)) have.push(item);
-    else need.push(item);
-  }
-  return { have, need };
-}
-
 async function start(){
-
-  // ZOOM‑Tech‑Scan
-  let techScan = "";
-  for(const f of ZOOM_TECH){
-    const r = await fetch("./" + f);
-    techScan += `${f} → ${r.ok ? "OK" : "FEHLT"}\n`;
+  const files = [
+    "ZOOM.tmp.txt","zoom.line.txt","zoom.axis.txt","zoom.color.txt",
+    "zoom.mask.txt","zoom.scan.txt","zoom.vector.txt","zoom.whirl.txt"
+  ];
+  let out = "ZOOM TECH SCAN\n\n";
+  for(const f of files){
+    out += f + " → " + await load(f) + "\n";
   }
-
-  // RUN‑Beam‑Points
-  const RUN8 = 8;
-  const RUN32 = RUN8 * 4;
-  const RUN128 = RUN32 * 4;
-
-  // C/X/Z‑Vergleich
-  const CtoX = compare(C, X);
-  const CtoZ = compare(C, Z);
-  const XtoC = compare(X, C);
-  const XtoZ = compare(X, Z);
-  const ZtoC = compare(Z, C);
-  const ZtoX = compare(Z, X);
-
-  // Ausgabe
-  document.getElementById("tech").textContent = techScan;
-
-  document.getElementById("run").textContent =
-    `RUN‑8   = ${RUN8}\n` +
-    `RUN‑32  = ${RUN32} (RUNC)\n` +
-    `RUN‑128 = ${RUN128} (RUNQ)\n`;
-
-  document.getElementById("cxz").textContent =
-    "C ↔ X\n" +
-    "C hat: " + CtoX.have.join(", ") + "\n" +
-    "C braucht: " + CtoX.need.join(", ") + "\n\n" +
-
-    "X hat: " + XtoC.have.join(", ") + "\n" +
-    "X braucht: " + XtoC.need.join(", ") + "\n\n" +
-
-    "C ↔ Z\n" +
-    "C hat: " + CtoZ.have.join(", ") + "\n" +
-    "C braucht: " + CtoZ.need.join(", ") + "\n\n" +
-
-    "Z hat: " + ZtoC.have.join(", ") + "\n" +
-    "Z braucht: " + ZtoC.need.join(", ") + "\n\n" +
-
-    "X ↔ Z\n" +
-    "X hat: " + XtoZ.have.join(", ") + "\n" +
-    "X braucht: " + XtoZ.need.join(", ") + "\n\n" +
-
-    "Z hat: " + ZtoX.have.join(", ") + "\n" +
-    "Z braucht: " + ZtoX.need.join(", ") + "\n";
-
-  // ZOOM‑Beschreibung
-  document.getElementById("desc").textContent =
-`ZOOM ist die 1‑Meter‑Linie des Systems.
-ZOOM erhält seine Rohdaten ausschließlich aus BEN.
-ZOOM erkennt Achsen, Farben, Masken und Scan‑Vektoren.
-ZOOM erzeugt die ersten Whirl‑Beam‑RUN‑Punkte (8/32/128).
-ZOOM liefert alle Daten an ORT und HOME weiter.
-
-ZOOM‑Datenpool:
-ZOOM.tmp, zoom.line, zoom.axis, zoom.color, zoom.mask,
-zoom.scan, zoom.vector, zoom.whirl,
-NC3×3, NC6e, NC9×9,
-ROOT.me, SOURCE.me, SYSTEM.me.
-
-ZOOM‑Input‑Pool:
-BEN.tmp, BEN.raw, BEN.scan, BEN.color, BEN.axis, BEN.mask.
-
-ZOOM‑Output‑Pool:
-zoom.line, zoom.axis, zoom.color, zoom.mask,
-zoom.scan, zoom.vector, zoom.whirl,
-NC3×3, NC6e, NC9×9,
-ROOT.me, SOURCE.me, SYSTEM.me.
-
-Whirl‑Beam‑RUN‑Punkte:
-RUN‑8   = Startpunkt des Wirbels
-RUN‑32  = Verstärkung (RUNC)
-RUN‑128 = Expansion (RUNQ)
-
-ZOOM‑NC‑Module:
-NC3×3 = Grundmatrix
-NC6e  = Erweiterte Matrix
-NC9×9 = Vollmatrix
-
-ZOOM‑RESPO‑Module:
-ROOT.me = Ursprung
-SOURCE.me = Quelle
-SYSTEM.me = System‑Kontext
-
-ZOOM liefert alle relevanten Daten an ORT und HOME.
-Ohne ZOOM kann ORT keine Würfel bilden und HOME keine Weitsicht erzeugen.`;
+  document.getElementById("out").textContent = out;
 }
 </script>
 </head>
-
 <body onload="start()">
-
-<h1>ZOOM · INDEX · 1m‑Linie · Whirl‑Beam · C/X/Z‑Matrix</h1>
-
-<div class="panel">
-  <h2>ZOOM‑Tech‑Scan</h2>
-  <pre id="tech">…</pre>
-</div>
-
-<div class="panel">
-  <h2>Whirl‑Beam‑RUN‑Punkte</h2>
-  <pre id="run">…</pre>
-</div>
-
-<div class="panel">
-  <h2>C/X/Z‑Matrix</h2>
-  <div class="matrix">
-    <div class="cell">C</div>
-    <div class="cell">X</div>
-    <div class="cell">Z</div>
-  </div>
-  <pre id="cxz">…</pre>
-</div>
-
-<div class="panel">
-  <h2>ZOOM‑Beschreibung</h2>
-  <pre id="desc">…</pre>
-</div>
-
+<h1>ZOOM INDEX</h1>
+<pre id="out">Lade…</pre>
 </body>
 </html>
