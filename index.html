@@ -2,31 +2,167 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ZOOM INDEX</title>
+<title>ZOOM RUNTIME</title>
+ 
 <style>
-body { background:#000; color:#0ff; font-family:Consolas; padding:20px; }
-pre { background:#111; padding:10px; border-radius:6px; }
+body{
+background:#000;
+color:#00ffff;
+font-family:Consolas,monospace;
+margin:0;
+}
+ 
+#top{
+padding:15px;
+background:#111;
+border-bottom:1px solid #0ff;
+}
+ 
+#grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:10px;
+padding:15px;
+}
+ 
+.card{
+border:1px solid #0ff;
+padding:10px;
+background:#050505;
+}
+ 
+.active{color:#00ff66;}
+.fail{color:#ff4444;}
+ 
+#log{
+margin:15px;
+padding:10px;
+background:#111;
+height:300px;
+overflow:auto;
+white-space:pre-wrap;
+}
 </style>
-<script>
-async function load(f){
-  const r = await fetch(f);
-  return r.ok ? "OK" : "FEHLT";
-}
-async function start(){
-  const files = [
-    "ZOOM.tmp.txt","zoom.line.txt","zoom.axis.txt","zoom.color.txt",
-    "zoom.mask.txt","zoom.scan.txt","zoom.vector.txt","zoom.whirl.txt"
-  ];
-  let out = "ZOOM TECH SCAN\n\n";
-  for(const f of files){
-    out += f + " → " + await load(f) + "\n";
-  }
-  document.getElementById("out").textContent = out;
-}
-</script>
 </head>
-<body onload="start()">
-<h1>ZOOM INDEX</h1>
-<pre id="out">Lade…</pre>
+ 
+<body>
+ 
+<div id="top">
+<h1>ZOOM RUNTIME</h1>
+<div id="health">BOOT...</div>
+</div>
+ 
+<div id="grid"></div>
+ 
+<div id="log"></div>
+ 
+<script>
+ 
+const modules=[
+"zoom.axis.txt",
+"zoom.color.txt",
+"zoom.line.txt",
+"zoom.mask.txt",
+"zoom.scan.txt",
+"zoom.vector.txt",
+"zoom.whirl.txt",
+"ZOOM.tmp.txt"
+];
+ 
+const cards={};
+ 
+function log(t){
+document.getElementById("log").textContent=
+"["+new Date().toLocaleTimeString()+"] "+t+"\n"+
+document.getElementById("log").textContent;
+}
+ 
+async function scanModule(file){
+ 
+try{
+ 
+const r=await fetch(file+"?t="+Date.now());
+ 
+if(!r.ok){
+throw new Error();
+}
+ 
+const txt=await r.text();
+ 
+cards[file].innerHTML=
+`
+<b>${file}</b><br>
+STATUS :
+<span class="active">ACTIVE</span><br>
+SIZE :
+${txt.length}<br>
+LINES :
+${txt.split("\n").length}
+`;
+ 
+return true;
+ 
+}catch{
+ 
+cards[file].innerHTML=
+`
+<b>${file}</b><br>
+STATUS :
+<span class="fail">MISSING</span>
+`;
+ 
+return false;
+}
+}
+ 
+async function runtime(){
+ 
+let ok=0;
+ 
+for(const f of modules){
+ 
+if(await scanModule(f)){
+ok++;
+}
+ 
+}
+ 
+const pct=Math.round(ok/modules.length*100);
+ 
+document.getElementById("health").innerHTML=
+`
+MODULES ${ok}/${modules.length}
+|
+HEALTH ${pct}%
+`;
+ 
+log("runtime scan complete : "+pct+"%");
+}
+ 
+function build(){
+ 
+const grid=document.getElementById("grid");
+ 
+for(const m of modules){
+ 
+const div=document.createElement("div");
+ 
+div.className="card";
+div.innerHTML=m;
+ 
+grid.appendChild(div);
+ 
+cards[m]=div;
+}
+ 
+}
+ 
+build();
+runtime();
+ 
+setInterval(runtime,5000);
+ 
+</script>
+ 
 </body>
 </html>
