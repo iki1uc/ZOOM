@@ -1,168 +1,264 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>ZOOM RUNTIME</title>
- 
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZOOM · runtime</title>
 <style>
-body{
-background:#000;
-color:#00ffff;
-font-family:Consolas,monospace;
-margin:0;
-}
- 
-#top{
-padding:15px;
-background:#111;
-border-bottom:1px solid #0ff;
-}
- 
-#grid{
-display:grid;
-grid-template-columns:repeat(2,1fr);
-gap:10px;
-padding:15px;
-}
- 
-.card{
-border:1px solid #0ff;
-padding:10px;
-background:#050505;
-}
- 
-.active{color:#00ff66;}
-.fail{color:#ff4444;}
- 
-#log{
-margin:15px;
-padding:10px;
-background:#111;
-height:300px;
-overflow:auto;
-white-space:pre-wrap;
-}
+  body{margin:0;background:#000;color:#0ff;font-family:Consolas,monospace;overflow:hidden}
+  #top{padding:10px 15px;background:#111;border-bottom:1px solid #0ff;
+       display:flex;justify-content:space-between;align-items:baseline}
+  #top h1{margin:0;font-size:16px;letter-spacing:3px;font-weight:normal}
+  #health{font-size:12px;color:#888}
+  #health b{color:#00ff66;font-weight:normal}
+  #stage{position:fixed;inset:50px 0 0 0}
+  canvas{width:100%;height:100%;display:block}
+  #log{position:fixed;bottom:0;left:0;right:0;height:80px;
+       background:rgba(0,0,0,0.85);border-top:1px solid #0ff;
+       padding:6px 12px;font-size:11px;color:#555;
+       overflow:auto;white-space:pre-wrap}
+  #log b{color:#0ff}
 </style>
 </head>
- 
 <body>
- 
+
 <div id="top">
-<h1>ZOOM RUNTIME</h1>
-<div id="health">BOOT...</div>
+  <h1>ZOOM · RUNTIME</h1>
+  <div id="health">SCAN…</div>
 </div>
- 
-<div id="grid"></div>
- 
+<div id="stage"><canvas id="c"></canvas></div>
 <div id="log"></div>
- 
+
 <script>
- 
-const modules=[
-"zoom.axis.txt",
-"zoom.color.txt",
-"zoom.line.txt",
-"zoom.mask.txt",
-"zoom.scan.txt",
-"zoom.vector.txt",
-"zoom.whirl.txt",
-"ZOOM.tmp.txt"
+"use strict";
+
+// ============================================================
+// ZOOM · die 8 module
+// jede datei liefert EINEN parameter. wenn fehlt: standard.
+// zusammen: ein tunnel der sich dreht und auf dich zukommt.
+// ============================================================
+
+const DATEIEN = [
+  "zoom.axis.txt",
+  "zoom.color.txt",
+  "zoom.line.txt",
+  "zoom.mask.txt",
+  "zoom.scan.txt",
+  "zoom.vector.txt",
+  "zoom.whirl.txt",
+  "ZOOM.tmp.txt"
 ];
- 
-const cards={};
- 
+
+const STANDARD = {
+  achsen:  3,
+  farben:  ["#00ffff", "#00ff66", "#ffff00", "#ff44aa"],
+  linien:  64,
+  maske:   "kreis",
+  scan:    0.35,
+  vektor:  [0, 0.02],
+  wirbel:  0.6,
+  tmp:     "leer"
+};
+
+const Z = { ...STANDARD };
+const geladen = new Set();
+
 function log(t){
-document.getElementById("log").textContent=
-"["+new Date().toLocaleTimeString()+"] "+t+"\n"+
-document.getElementById("log").textContent;
+  const el = document.getElementById("log");
+  const zeit = new Date().toLocaleTimeString();
+  el.textContent = `[${zeit}] ${t}\n` + el.textContent;
 }
- 
-async function scanModule(file){
- 
-try{
- 
-const r=await fetch(file+"?t="+Date.now());
- 
-if(!r.ok){
-throw new Error();
+
+// ---- leser: jede datei ist nur ein wert ----
+async function ladeModul(datei){
+  try{
+    const r = await fetch(datei + "?t=" + Date.now());
+    if(!r.ok) throw new Error();
+    const txt = (await r.text()).trim();
+    geladen.add(datei);
+
+    // was steht drin? wir sind großzügig.
+    // zahl? → achsen, linien, wirbel
+    // farbe? → farben
+    // wort? → maske, tmp
+    const alsZahl = parseFloat(txt);
+
+    if(datei === "zoom.axis.txt" && !isNaN(alsZahl))   Z.achsen = Math.max(1, Math.min(6, Math.round(alsZahl)));
+    if(datei === "zoom.line.txt" && !isNaN(alsZahl))   Z.linien = Math.max(8, Math.min(256, Math.round(alsZahl)));
+    if(datei === "zoom.scan.txt" && !isNaN(alsZahl))   Z.scan   = Math.max(0, Math.min(1, alsZahl));
+    if(datei === "zoom.whirl.txt" && !isNaN(alsZahl))  Z.wirbel = Math.max(-3, Math.min(3, alsZahl));
+    if(datei === "zoom.mask.txt" && txt)               Z.maske  = txt.toLowerCase();
+    if(datei === "ZOOM.tmp.txt")                       Z.tmp    = txt;
+
+    if(datei === "zoom.color.txt"){
+      const teile = txt.split(/[\s,;]+/).filter(s => s.startsWith("#"));
+      if(teile.length >= 2) Z.farben = teile;
+    }
+
+    return txt;
+  }catch{
+    return null;
+  }
 }
- 
-const txt=await r.text();
- 
-cards[file].innerHTML=
-`
-<b>${file}</b><br>
-STATUS :
-<span class="active">ACTIVE</span><br>
-SIZE :
-${txt.length}<br>
-LINES :
-${txt.split("\n").length}
-`;
- 
-return true;
- 
-}catch{
- 
-cards[file].innerHTML=
-`
-<b>${file}</b><br>
-STATUS :
-<span class="fail">MISSING</span>
-`;
- 
-return false;
+
+// ---- scanner: zeigt gesundheit ----
+async function scanne(){
+  const bericht = [];
+  for(const d of DATEIEN){
+    const txt = await ladeModul(d);
+    bericht.push(`${d} : ${txt === null ? "MISSING" : "ACTIVE (" + txt.length + ")"}`);
+  }
+
+  const ok = DATEIEN.filter(d => geladen.has(d)).length;
+  const pct = Math.round(ok / DATEIEN.length * 100);
+  document.getElementById("health").innerHTML =
+    `MODULE <b>${ok}/${DATEIEN.length}</b> · HEALTH <b>${pct}%</b>`;
+
+  log("scan · " + pct + "%");
+  log(bericht.join("  "));
 }
+
+// ============================================================
+// DER TUNNEL
+// ============================================================
+
+const c = document.getElementById("c");
+const ctx = c.getContext("2d");
+
+let W = 0, H = 0, DPR = 1;
+function resize(){
+  DPR = window.devicePixelRatio || 1;
+  W = c.clientWidth;
+  H = c.clientHeight;
+  c.width  = W * DPR;
+  c.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
- 
-async function runtime(){
- 
-let ok=0;
- 
-for(const f of modules){
- 
-if(await scanModule(f)){
-ok++;
+window.addEventListener("resize", resize);
+resize();
+
+// punkte im raum
+const punkte = [];
+const MAX = 400;
+for(let i = 0; i < MAX; i++){
+  punkte.push({
+    x: (Math.random() - 0.5) * 2,
+    y: (Math.random() - 0.5) * 2,
+    z: 0.05 + Math.random() * 1
+  });
 }
- 
+
+let zeit = 0;
+let dreh = 0;
+let farbIdx = 0;
+
+function zeichne(){
+  zeit += 1 / 60;
+  dreh += 0.003 * Z.wirbel;
+
+  // leichter nachzieheffekt
+  ctx.fillStyle = "rgba(0,0,0,0.18)";
+  ctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const cy = H / 2;
+  const fokus = Math.min(W, H) * 0.5;
+
+  // welche farbe hat der scan?
+  farbIdx = Math.floor((zeit * Z.scan) % Z.farben.length);
+  const farbe = Z.farben[farbIdx];
+
+  // achsen: 1, 2 oder 3 → auch sichtbar an einer kleinen achsenanzeige
+  const achsen = Z.achsen;
+
+  for(let i = 0; i < punkte.length; i++){
+    const p = punkte[i];
+
+    // vektor: leichtes driften
+    p.x += Z.vektor[0] * 0.002;
+    p.y += Z.vektor[1] * 0.002;
+
+    // whirl: rotation um (0,0)
+    const cos = Math.cos(dreh);
+    const sin = Math.sin(dreh);
+    const rx = p.x * cos - p.y * sin;
+    const ry = p.x * sin + p.y * cos;
+
+    // zoom: z wird kleiner (kommt näher)
+    p.z -= 0.004;
+    if(p.z <= 0.02){
+      p.z = 1;
+      p.x = (Math.random() - 0.5) * 2;
+      p.y = (Math.random() - 0.5) * 2;
+    }
+
+    // projektion
+    const skala = fokus / p.z;
+    const sx = cx + rx * skala;
+    const sy = cy + ry * skala;
+
+    // achsen-bedingt: manchmal nur bei geraden/ungeraden punkten zeichnen
+    if(achsen === 1 && i % 2 !== 0) continue;
+    if(achsen === 2 && i % 3 === 0) continue;
+
+    // maske: kreis / quadrat / none
+    const dx = sx - cx;
+    const dy = sy - cy;
+    let sichtbar = true;
+    if(Z.maske === "kreis"){
+      sichtbar = (dx*dx + dy*dy) < (fokus * 0.85) ** 2;
+    } else if(Z.maske === "quadrat"){
+      sichtbar = Math.abs(dx) < fokus * 0.8 && Math.abs(dy) < fokus * 0.8;
+    }
+    if(!sichtbar) continue;
+
+    // größe nach z
+    const größe = Math.max(0.5, (1 - p.z) * 3);
+
+    // farbe: die laufende palette
+    ctx.fillStyle = farbe;
+    ctx.globalAlpha = Math.max(0.05, 1 - p.z);
+    ctx.fillRect(sx, sy, größe, größe);
+  }
+  ctx.globalAlpha = 1;
+
+  // linien-modus: 64 linien aus mitte
+  if(Z.linien > 0){
+    ctx.strokeStyle = farbe;
+    ctx.globalAlpha = 0.08;
+    ctx.lineWidth = 1;
+    for(let i = 0; i < Z.linien; i++){
+      const a = (i / Z.linien) * Math.PI * 2 + dreh;
+      const r1 = 20;
+      const r2 = Math.min(W, H) * 0.45;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+      ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // scan-sweep: ein dünner balken kreuzt den schirm
+  const sweepX = ((zeit * Z.scan * 0.6) % 1) * W;
+  ctx.fillStyle = farbe;
+  ctx.globalAlpha = 0.15;
+  ctx.fillRect(sweepX, 0, 2, H);
+  ctx.globalAlpha = 1;
+
+  requestAnimationFrame(zeichne);
 }
- 
-const pct=Math.round(ok/modules.length*100);
- 
-document.getElementById("health").innerHTML=
-`
-MODULES ${ok}/${modules.length}
-|
-HEALTH ${pct}%
-`;
- 
-log("runtime scan complete : "+pct+"%");
-}
- 
-function build(){
- 
-const grid=document.getElementById("grid");
- 
-for(const m of modules){
- 
-const div=document.createElement("div");
- 
-div.className="card";
-div.innerHTML=m;
- 
-grid.appendChild(div);
- 
-cards[m]=div;
-}
- 
-}
- 
-build();
-runtime();
- 
-setInterval(runtime,5000);
- 
+
+// ============================================================
+// START
+// ============================================================
+
+(async () => {
+  log("zoom · start");
+  await scanne();          // einmal scannen
+  setInterval(scanne, 15000);
+  zeichne();               // tunnel läuft
+})();
 </script>
- 
 </body>
 </html>
